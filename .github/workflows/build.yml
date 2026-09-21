@@ -161,6 +161,7 @@ jobs:
 
       - name: Build VKD3D-Proton
         working-directory: vkd3d-proton
+        id: build
         run: |
           meson setup build.64-clang --cross-file=build-win64-clang.txt $MESON_COMMON_ARGS
           ninja -C build.64-clang
@@ -183,6 +184,7 @@ jobs:
           tar -caf "vkd3d-proton-${VERSION_NAME}.tar.zst" "vkd3d-proton-${VERSION_NAME}"
           echo "Archive created:"
           ls -lh "vkd3d-proton-${VERSION_NAME}.tar.zst"
+          echo "ver=$VERSION_NAME" >> "$GITHUB_OUTPUT"
 
       - name: Locate and copy archive
         id: pack
