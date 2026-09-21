@@ -20,9 +20,7 @@ defaults:
 
 env:
   VKD3D_VERSION: '3.0.1'
-  # Флаги для shell-использования
   OPT_FLAGS: '-march=x86-64-v4 -mtune=znver4 -O3 -fno-plt -fomit-frame-pointer -falign-functions=32 -falign-loops=32 -falign-jumps=32'
-  # Тот же набор, но в формате Meson-списка (через запятую в кавычках)
   OPT_FLAGS_LIST: "'-march=x86-64-v4', '-mtune=znver4', '-O3', '-fno-plt', '-fomit-frame-pointer', '-falign-functions=32', '-falign-loops=32', '-falign-jumps=32'"
 
 jobs:
