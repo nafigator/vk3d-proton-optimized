@@ -1,0 +1,140 @@
+name: Build VKD3D-Proton with optimizations
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag name for release (leave empty to auto-generate)'
+        required: false
+        default: ''
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: write
+
+env:
+  VKD3D_VERSION: '3.0.1'
+  # Флаги для shell-использования
+  OPT_FLAGS: '-march=x86-64-v4 -mtune=znver4 -O3 -fno-plt -fomit-frame-pointer -falign-functions=32 -falign-loops=32 -falign-jumps=32'
+  # Тот же набор, но в формате Meson-списка (через запятую в кавычках)
+  OPT_FLAGS_LIST: "'-march=x86-64-v4', '-mtune=znver4', '-O3', '-fno-plt', '-fomit-frame-pointer', '-falign-functions=32', '-falign-loops=32', '-falign-jumps=32'"
+
+jobs:
+  build:
+    runs-on: self-hosted
+    container:
+      image: archlinux/archlinux:base-devel
+      options: --user root
+    outputs:
+      tag: ${{ steps.tag.outputs.tag }}
+      archive_name: ${{ steps.pack.outputs.archive_name }}
+    steps:
+      - name: Determine release tag
+        id: tag
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            TAG="${GITHUB_REF_NAME}"
+          else
+            TAG="${{ inputs.tag }}"
+            if [ -z "$TAG" ]; then
+              TAG="v${VKD3D_VERSION}-$(date -u +%Y%m%d)-${GITHUB_SHA:0:7}"
+            fi
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "Using tag: $TAG"
+
+      - name: Install dependencies
+        run: |
+          pacman -Syu --needed --noconfirm \
+            git meson ninja mingw-w64-gcc glslang python
+
+      - name: Clone VKD3D-Proton source
+        run: |
+          rm -rf vkd3d-proton
+          git clone --depth 1 --branch "v${VKD3D_VERSION}" \
+            https://github.com/HansKristian-Work/vkd3d-proton.git \
+            vkd3d-proton
+          cd vkd3d-proton
+          git submodule update --init --recursive
+
+      - name: Patch cross-files with optimization flags
+        working-directory: vkd3d-proton
+        run: |
+          for f in build-win64.txt build-win32.txt; do
+            if [ -f "$f" ]; then
+              # Remove old version [built-in options], if exists
+              sed -i '/^\[built-in options\]/,/^\[/ { /^\[built-in options\]/d; /^\[/!d }' "$f"
+              # Add new section at file end
+              cat >> "$f" <<EOF
+
+          [built-in options]
+          c_args = [${OPT_FLAGS_LIST}]
+          cpp_args = [${OPT_FLAGS_LIST}]
+          EOF
+              echo "--- $f (после правки) ---"
+              cat "$f"
+            fi
+          done
+
+      - name: Build VKD3D-Proton
+        working-directory: vkd3d-proton
+        env:
+          TAG: ${{ steps.tag.outputs.tag }}
+        run: |
+          VERSION_NAME="${TAG}"
+          ./package-release.sh "$VERSION_NAME" build
+          echo "VERSION_NAME=$VERSION_NAME" >> "$GITHUB_ENV"
+          echo "--- build/ contents ---"
+          ls -lh build/
+
+      - name: Locate and copy archive
+        id: pack
+        working-directory: vkd3d-proton
+        run: |
+          SRC_ARCHIVE=$(ls build/vkd3d-proton-*.tar.gz | head -1)
+          ARCHIVE_NAME=$(basename "$SRC_ARCHIVE")
+          cp "$SRC_ARCHIVE" "../${ARCHIVE_NAME}"
+          echo "archive_name=${ARCHIVE_NAME}" >> "$GITHUB_OUTPUT"
+          echo "Archive: ${ARCHIVE_NAME}"
+          ls -lh "../${ARCHIVE_NAME}"
+
+      - name: Upload archive as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: vkd3d-proton-archive
+          path: ${{ steps.pack.outputs.archive_name }}
+          retention-days: 5
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: vkd3d-proton-archive
+          path: .
+
+      - name: Create or update release with archive
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ needs.build.outputs.tag }}
+          ARCHIVE: ${{ needs.build.outputs.archive_name }}
+        run: |
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "Release $TAG already exists — uploading files"
+            gh release upload "$TAG" \
+              --repo "$GITHUB_REPOSITORY" \
+              --clobber \
+              "$ARCHIVE"
+          else
+            echo "Creating release $TAG"
+            gh release create "$TAG" \
+              --repo "$GITHUB_REPOSITORY" \
+              --title "VKD3D-Proton ${VKD3D_VERSION} (${TAG})" \
+              --generate-notes \
+              --latest \
+              "$ARCHIVE"
+          fi
