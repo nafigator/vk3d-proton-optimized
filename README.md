@@ -1,10 +1,10 @@
 # VKD3D-Proton (x86-64-v4 optimized)
 
-Custom builds of [VKD3D-Proton](https://github.com/HansKristian-Work/vkd3d-proton) with `-march=x86-64-v4 -O3` and related flags for Devuan Excalibur on AMD Zen 4 CPUs.
+Custom builds of [VKD3D-Proton](https://github.com/HansKristian-Work/vkd3d-proton) with `-march=x86-64-v4 -O3` and related flags for Linux on AMD Zen 4 CPUs.
 
 ## Requirements
 
-- CPU with **AVX-512** support (AMD Zen 4, Intel Skylake-X or newer)
+- CPU with **AVX-512** support (AMD Zen 4 or newer)
 - Wine 8.0+ or Proton 8.0+
 - x86_64 Linux
 
