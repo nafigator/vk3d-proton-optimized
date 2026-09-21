@@ -1,4 +1,4 @@
-name: Build VKD3D-Proton with optimizations
+name: Build VKD3D-Proton with Clang (x86-64-v4)
 
 on:
   workflow_dispatch:
@@ -20,14 +20,14 @@ defaults:
 
 env:
   VKD3D_VERSION: '3.0.1'
-  OPT_FLAGS: '-march=x86-64-v4 -mtune=znver4 -mstackrealign -O3 -fno-plt -fomit-frame-pointer -falign-functions=32 -falign-loops=32 -falign-jumps=32'
-  OPT_FLAGS_LIST: "'-march=x86-64-v4', '-mtune=znver4', '-mstackrealign', '-O3', '-fno-plt', '-fomit-frame-pointer', '-falign-functions=32', '-falign-loops=32', '-falign-jumps=32'"
+  OPT_FLAGS: '-march=x86-64-v4 -mtune=znver4 -O3 -fno-plt -fomit-frame-pointer -falign-functions=32 -falign-loops=32 -falign-jumps=32'
+  OPT_FLAGS_LIST: "'-march=x86-64-v4', '-mtune=znver4', '-O3', '-fno-plt', '-fomit-frame-pointer', '-falign-functions=32', '-falign-loops=32', '-falign-jumps=32'"
 
 jobs:
   build:
     runs-on: self-hosted
     container:
-      image: archlinux/archlinux:multilib-devel
+      image: archlinux/archlinux:base-devel
       options: --user root
     outputs:
       tag: ${{ steps.tag.outputs.tag }}
@@ -49,9 +49,13 @@ jobs:
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
           echo "Using tag: $TAG"
 
-      - name: Install dependencies
+      - name: Install dependencies (Clang, MinGW, Meson)
         run: |
-          pacman -Syu --needed --noconfirm git meson mingw-w64-gcc clang glslang wine xcb-util xcb-util-keysyms xcb-util-wm
+          pacman -Syu --needed --noconfirm \
+            git meson ninja \
+            clang lld mingw-w64-crt mingw-w64-headers mingw-w64-tools \
+            glslang python \
+            libatomic_ops
 
       - name: Clone VKD3D-Proton source
         run: |
@@ -63,40 +67,97 @@ jobs:
           cd vkd3d-proton
           git submodule update --init --recursive
 
-      - name: Patch cross-files with optimization flags
+      - name: Create Clang cross-files
         working-directory: vkd3d-proton
         run: |
-          for f in build-win64.txt build-win32.txt; do
-            if [ -f "$f" ]; then
-              # Remove old version [built-in options], if exists
-              sed -i '/^\[built-in options\]/,/^\[/ { /^\[built-in options\]/d; /^\[/!d }' "$f"
-              # Add new section at file end
-              cat >> "$f" <<EOF
+          TARGET="x86_64-w64-windows-gnu"
+          
+          cat > build-win64-clang.txt <<EOF
+          [binaries]
+          c = 'clang'
+          cpp = 'clang++'
+          ar = 'llvm-ar'
+          strip = 'llvm-strip'
+          windres = 'llvm-windres'
+
+          [properties]
+          needs_exe_wrapper = true
+
+          [host_machine]
+          system = 'windows'
+          cpu_family = 'x86_64'
+          cpu = 'x86_64'
+          endian = 'little'
 
           [built-in options]
-          c_args = [${OPT_FLAGS_LIST}]
-          cpp_args = [${OPT_FLAGS_LIST}]
+          c_args = ['--target=${TARGET}', ${OPT_FLAGS_LIST}]
+          cpp_args = ['--target=${TARGET}', ${OPT_FLAGS_LIST}]
+          c_link_args = ['--target=${TARGET}', '-fuse-ld=lld']
+          cpp_link_args = ['--target=${TARGET}', '-fuse-ld=lld']
           EOF
-              echo "--- $f (после правки) ---"
-              cat "$f"
-            fi
-          done
+
+          cat > build-win32-clang.txt <<EOF
+          [binaries]
+          c = 'clang'
+          cpp = 'clang++'
+          ar = 'llvm-ar'
+          strip = 'llvm-strip'
+          windres = 'llvm-windres'
+
+          [properties]
+          needs_exe_wrapper = true
+
+          [host_machine]
+          system = 'windows'
+          cpu_family = 'x86'
+          cpu = 'i686'
+          endian = 'little'
+
+          [built-in options]
+          c_args = ['--target=i686-w64-windows-gnu', ${OPT_FLAGS_LIST}]
+          cpp_args = ['--target=i686-w64-windows-gnu', ${OPT_FLAGS_LIST}]
+          c_link_args = ['--target=i686-w64-windows-gnu', '-fuse-ld=lld']
+          cpp_link_args = ['--target=i686-w64-windows-gnu', '-fuse-ld=lld']
+          EOF
+          
+          echo "--- build-win64-clang.txt ---"
+          cat build-win64-clang.txt
 
       - name: Build VKD3D-Proton
         working-directory: vkd3d-proton
-        id: build
         run: |
+          meson setup build.64-clang --cross-file=build-win64-clang.txt --buildtype release
+          ninja -C build.64-clang
+          
+          meson setup build.32-clang --cross-file=build-win32-clang.txt --buildtype release
+          ninja -C build.32-clang
+          
+          # Формируем структуру релиза
           VERSION_NAME="${TAG#v}"
-          ./package-release.sh "$VERSION_NAME" build
-          echo "ver=$VERSION_NAME" >> "$GITHUB_OUTPUT"
-          echo "--- build/ contents ---"
-          ls -lh build/
+          mkdir -p "vkd3d-proton-${VERSION_NAME}/x64" "vkd3d-proton-${VERSION_NAME}/x86"
+          cp build.64-clang/libs/d3d12/d3d12.dll "vkd3d-proton-${VERSION_NAME}/x64/"
+          cp build.64-clang/libs/d3d12core/d3d12core.dll "vkd3d-proton-${VERSION_NAME}/x64/"
+          cp build.32-clang/libs/d3d12/d3d12.dll "vkd3d-proton-${VERSION_NAME}/x86/"
+          cp build.32-clang/libs/d3d12core/d3d12core.dll "vkd3d-proton-${VERSION_NAME}/x86/"
+          
+          # Копируем скрипт установки
+          cp setup_vkd3d_proton.sh "vkd3d-proton-${VERSION_NAME}/"
+          
+          # Архивация
+          tar -caf "vkd3d-proton-${VERSION_NAME}.tar.zst" "vkd3d-proton-${VERSION_NAME}"
+          echo "Archive created:"
+          ls -lh "vkd3d-proton-${VERSION_NAME}.tar.zst"
 
       - name: Locate and copy archive
         id: pack
         working-directory: vkd3d-proton
         run: |
-          SRC_ARCHIVE=$(ls build/vkd3d-proton-*.tar.* | head -1)
+          SRC_ARCHIVE=$(ls vkd3d-proton-*.tar.zst | head -1)
+          if [ -z "$SRC_ARCHIVE" ]; then
+            echo "ERROR: no archive found"
+            ls -lh
+            exit 1
+          fi
           ARCHIVE_NAME=$(basename "$SRC_ARCHIVE")
           cp "$SRC_ARCHIVE" "../${ARCHIVE_NAME}"
           echo "archive_name=${ARCHIVE_NAME}" >> "$GITHUB_OUTPUT"
