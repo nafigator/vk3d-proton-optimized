@@ -51,6 +51,8 @@ jobs:
             git meson ninja mingw-w64-gcc glslang python
 
       - name: Clone VKD3D-Proton source
+        env:
+          TAG: ${{ steps.tag.outputs.tag }}
         run: |
           rm -rf vkd3d-proton
           git clone --depth 1 --branch "${TAG}" \
