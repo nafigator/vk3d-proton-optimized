@@ -27,7 +27,7 @@ jobs:
   build:
     runs-on: self-hosted
     container:
-      image: archlinux/archlinux:base-devel
+      image: archlinux/archlinux:multilib-devel
       options: --user root
     outputs:
       tag: ${{ steps.tag.outputs.tag }}
@@ -53,9 +53,8 @@ jobs:
         run: |
           pacman -Syu --needed --noconfirm \
             git meson ninja \
-            clang lld mingw-w64-crt mingw-w64-headers mingw-w64-tools \
-            glslang python \
-            libatomic_ops
+            clang lld mingw-w64-crt mingw-w64-headers \
+            glslang python wine
 
       - name: Clone VKD3D-Proton source
         run: |
