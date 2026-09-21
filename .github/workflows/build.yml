@@ -77,6 +77,8 @@ jobs:
           ar = 'llvm-ar'
           strip = 'llvm-strip'
           windres = 'llvm-windres'
+          c_ld = 'lld'
+          cpp_ld = 'lld'
 
           [properties]
           needs_exe_wrapper = true
@@ -90,8 +92,8 @@ jobs:
           [built-in options]
           c_args = ['--target=${TARGET}', ${OPT_FLAGS_LIST}]
           cpp_args = ['--target=${TARGET}', ${OPT_FLAGS_LIST}]
-          c_link_args = ['--target=${TARGET}']
-          cpp_link_args = ['--target=${TARGET}']
+          c_link_args = ['--target=${TARGET}', '-fuse-ld=lld']
+          cpp_link_args = ['--target=${TARGET}', '-fuse-ld=lld']
           EOF
 
           cat > build-win32-clang.txt <<EOF
@@ -101,6 +103,8 @@ jobs:
           ar = 'llvm-ar'
           strip = 'llvm-strip'
           windres = 'llvm-windres'
+          c_ld = 'lld'
+          cpp_ld = 'lld'
 
           [properties]
           needs_exe_wrapper = true
@@ -114,8 +118,8 @@ jobs:
           [built-in options]
           c_args = ['--target=i686-w64-windows-gnu', ${OPT_FLAGS_LIST}]
           cpp_args = ['--target=i686-w64-windows-gnu', ${OPT_FLAGS_LIST}]
-          c_link_args = ['--target=i686-w64-windows-gnu']
-          cpp_link_args = ['--target=i686-w64-windows-gnu']
+          c_link_args = ['--target=i686-w64-windows-gnu', '-fuse-ld=lld']
+          cpp_link_args = ['--target=i686-w64-windows-gnu', '-fuse-ld=lld']
           EOF
           
           echo "--- build-win64-clang.txt ---"
