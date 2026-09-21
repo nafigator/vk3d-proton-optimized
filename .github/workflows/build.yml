@@ -96,7 +96,7 @@ jobs:
         id: pack
         working-directory: vkd3d-proton
         run: |
-          SRC_ARCHIVE=$(ls build/vkd3d-proton-*.tar.gz | head -1)
+          SRC_ARCHIVE=$(ls build/vkd3d-proton-*.tar.* | head -1)
           ARCHIVE_NAME=$(basename "$SRC_ARCHIVE")
           cp "$SRC_ARCHIVE" "../${ARCHIVE_NAME}"
           echo "archive_name=${ARCHIVE_NAME}" >> "$GITHUB_OUTPUT"
