@@ -29,7 +29,7 @@ jobs:
   build:
     runs-on: self-hosted
     container:
-      image: archlinux/archlinux:base-devel
+      image: archlinux/archlinux:multilib-devel
       options: --user root
     outputs:
       tag: ${{ steps.tag.outputs.tag }}
