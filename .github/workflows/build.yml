@@ -20,8 +20,7 @@ defaults:
 
 env:
   VKD3D_VERSION: '3.0.1'
-  OPT_FLAGS: '-march=x86-64-v4 -mtune=znver4 -O3 -fno-plt -fomit-frame-pointer -falign-functions=32 -falign-loops=32 -falign-jumps=32'
-  OPT_FLAGS_LIST: "'-march=x86-64-v4', '-mtune=znver4', '-O3', '-fno-plt', '-fomit-frame-pointer', '-falign-functions=32', '-falign-loops=32', '-falign-jumps=32'"
+  OPT_FLAGS_LIST: "'-march=x86-64-v4', '-mtune=znver4', '-O3', '-fomit-frame-pointer', '-falign-functions=32', '-falign-loops=32'"
 
 jobs:
   build:
@@ -91,8 +90,8 @@ jobs:
           [built-in options]
           c_args = ['--target=${TARGET}', ${OPT_FLAGS_LIST}]
           cpp_args = ['--target=${TARGET}', ${OPT_FLAGS_LIST}]
-          c_link_args = ['--target=${TARGET}', '-fuse-ld=lld']
-          cpp_link_args = ['--target=${TARGET}', '-fuse-ld=lld']
+          c_link_args = ['--target=${TARGET}']
+          cpp_link_args = ['--target=${TARGET}']
           EOF
 
           cat > build-win32-clang.txt <<EOF
@@ -115,8 +114,8 @@ jobs:
           [built-in options]
           c_args = ['--target=i686-w64-windows-gnu', ${OPT_FLAGS_LIST}]
           cpp_args = ['--target=i686-w64-windows-gnu', ${OPT_FLAGS_LIST}]
-          c_link_args = ['--target=i686-w64-windows-gnu', '-fuse-ld=lld']
-          cpp_link_args = ['--target=i686-w64-windows-gnu', '-fuse-ld=lld']
+          c_link_args = ['--target=i686-w64-windows-gnu']
+          cpp_link_args = ['--target=i686-w64-windows-gnu']
           EOF
           
           echo "--- build-win64-clang.txt ---"
