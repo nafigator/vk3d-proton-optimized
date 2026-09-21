@@ -53,7 +53,7 @@ jobs:
       - name: Clone VKD3D-Proton source
         run: |
           rm -rf vkd3d-proton
-          git clone --depth 1 --branch "v${VKD3D_VERSION}" \
+          git clone --depth 1 --branch "${TAG}" \
             https://github.com/HansKristian-Work/vkd3d-proton.git \
             vkd3d-proton
           cd vkd3d-proton
@@ -83,7 +83,7 @@ jobs:
         env:
           TAG: ${{ steps.tag.outputs.tag }}
         run: |
-          VERSION_NAME="${TAG}"
+          VERSION_NAME="${TAG#v}"
           ./package-release.sh "$VERSION_NAME" build
           echo "VERSION_NAME=$VERSION_NAME" >> "$GITHUB_ENV"
           echo "--- build/ contents ---"
@@ -133,7 +133,7 @@ jobs:
             echo "Creating release $TAG"
             gh release create "$TAG" \
               --repo "$GITHUB_REPOSITORY" \
-              --title "VKD3D-Proton ${VKD3D_VERSION} (${TAG})" \
+              --title "VKD3D-Proton ${VERSION_NAME} (${TAG})" \
               --generate-notes \
               --latest \
               "$ARCHIVE"
