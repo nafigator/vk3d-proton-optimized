@@ -52,10 +52,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pacman -Syu --needed --noconfirm \
-            git meson ninja mingw-w64-gcc mingw-w64-tools \
-            clang glslang wine python \
-            xcb-util xcb-util-keysyms xcb-util-wm
+          pacman -Syu --needed --noconfirm git meson mingw-w64-gcc clang glslang wine xcb-util xcb-util-keysyms xcb-util-wm
 
       - name: Clone VKD3D-Proton source
         run: |
