@@ -129,10 +129,10 @@ jobs:
       - name: Build VKD3D-Proton
         working-directory: vkd3d-proton
         run: |
-          meson setup build.64-clang --cross-file=build-win64-clang.txt ${MESON_COMMON_ARGS}
+          meson setup build.64-clang --cross-file=build-win64-clang.txt $MESON_COMMON_ARGS
           ninja -C build.64-clang
           
-          meson setup build.32-clang --cross-file=build-win32-clang.txt ${MESON_COMMON_ARGS}
+          meson setup build.32-clang --cross-file=build-win32-clang.txt $MESON_COMMON_ARGS
           ninja -C build.32-clang
           
           # Формируем структуру релиза
