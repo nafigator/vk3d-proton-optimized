@@ -33,7 +33,7 @@ jobs:
       options: --user root
     outputs:
       tag: ${{ steps.tag.outputs.tag }}
-      ver: ${{ steps.tag.outputs.ver }}
+      ver: ${{ steps.build.outputs.ver }}
       archive_name: ${{ steps.pack.outputs.archive_name }}
     steps:
       - name: Determine release tag
@@ -86,6 +86,7 @@ jobs:
 
       - name: Build VKD3D-Proton
         working-directory: vkd3d-proton
+        id: build
         run: |
           VERSION_NAME="${TAG#v}"
           ./package-release.sh "$VERSION_NAME" build
