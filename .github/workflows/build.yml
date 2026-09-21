@@ -56,6 +56,39 @@ jobs:
             clang llvm lld mingw-w64-gcc mingw-w64-crt mingw-w64-headers \
             glslang python wine
 
+      - name: Create compiler wrappers
+        run: |
+          CLANG_REAL=$(which clang)
+          CLANGXX_REAL=$(which clang++)
+
+          cat > /usr/local/bin/clang-filtered << EOF
+          #!/bin/bash
+          args=()
+          for arg in "\$@"; do
+              case "\$arg" in
+                  -Wl,--allow-shlib-undefined|--allow-shlib-undefined) ;;
+                  *) args+=("\$arg") ;;
+              esac
+          done
+          exec "${CLANG_REAL}" "\${args[@]}"
+          EOF
+          chmod +x /usr/local/bin/clang-filtered
+
+          cat > /usr/local/bin/clang++-filtered << EOF
+          #!/bin/bash
+          args=()
+          for arg in "\$@"; do
+              case "\$arg" in
+                  -Wl,--allow-shlib-undefined|--allow-shlib-undefined) ;;
+                  *) args+=("\$arg") ;;
+              esac
+          done
+          exec "${CLANGXX_REAL}" "\${args[@]}"
+          EOF
+          chmod +x /usr/local/bin/clang++-filtered
+
+          which clang-filtered clang++-filtered
+
       - name: Clone VKD3D-Proton source
         run: |
           rm -rf vkd3d-proton
@@ -73,8 +106,8 @@ jobs:
           
           cat > build-win64-clang.txt <<EOF
           [binaries]
-          c = 'clang'
-          cpp = 'clang++'
+          c = 'clang-filtered'
+          cpp = 'clang++-filtered'
           ar = 'llvm-ar'
           strip = 'llvm-strip'
           windres = 'llvm-windres'
@@ -99,8 +132,8 @@ jobs:
 
           cat > build-win32-clang.txt <<EOF
           [binaries]
-          c = 'clang'
-          cpp = 'clang++'
+          c = 'clang-filtered'
+          cpp = 'clang++-filtered'
           ar = 'llvm-ar'
           strip = 'llvm-strip'
           windres = 'llvm-windres'
