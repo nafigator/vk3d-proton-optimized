@@ -1,4 +1,3 @@
-```markdown
 # VKD3D-Proton (x86-64-v4 optimized)
 
 Custom builds of [VKD3D-Proton](https://github.com/HansKristian-Work/vkd3d-proton) with `-march=x86-64-v4 -O3` and related flags for Devuan Excalibur on AMD Zen 4 CPUs.
@@ -64,4 +63,3 @@ First launch after clearing the cache will be slower — shaders are recompiled 
 Build scripts and workflows in this repository are licensed under the MIT License.
 
 VKD3D-Proton itself is distributed under the [VKD3D license](https://github.com/HansKristian-Work/vkd3d-proton/blob/master/LICENSE). The compiled binaries in Releases are redistributions of VKD3D-Proton under its original license.
-```
