@@ -46,7 +46,7 @@ jobs:
               TAG="v${VKD3D_VERSION}-$(date -u +%Y%m%d)-${GITHUB_SHA:0:7}"
             fi
           fi
-          echo "tag=$TAG" >> "$GITHUB_ENV"
+          echo "TAG=$TAG" >> "$GITHUB_ENV"
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
           echo "Using tag: $TAG"
 
