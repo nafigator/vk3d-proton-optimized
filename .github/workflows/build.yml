@@ -52,7 +52,7 @@ jobs:
         run: |
           pacman -Syu --needed --noconfirm \
             git meson ninja \
-            clang llvm lld mingw-w64-crt mingw-w64-headers \
+            clang llvm lld mingw-w64-gcc mingw-w64-crt mingw-w64-headers \
             glslang python wine
 
       - name: Clone VKD3D-Proton source
