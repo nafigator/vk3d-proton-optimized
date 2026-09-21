@@ -33,6 +33,7 @@ jobs:
       options: --user root
     outputs:
       tag: ${{ steps.tag.outputs.tag }}
+      ver: ${{ steps.tag.outputs.ver }}
       archive_name: ${{ steps.pack.outputs.archive_name }}
     steps:
       - name: Determine release tag
@@ -88,7 +89,7 @@ jobs:
         run: |
           VERSION_NAME="${TAG#v}"
           ./package-release.sh "$VERSION_NAME" build
-          echo "VERSION_NAME=$VERSION_NAME" >> "$GITHUB_ENV"
+          echo "ver=$VERSION_NAME" >> "$GITHUB_OUTPUT"
           echo "--- build/ contents ---"
           ls -lh build/
 
@@ -124,6 +125,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: ${{ needs.build.outputs.tag }}
+          VER: ${{ needs.build.outputs.ver }}
           ARCHIVE: ${{ needs.build.outputs.archive_name }}
         run: |
           if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
@@ -136,7 +138,7 @@ jobs:
             echo "Creating release $TAG"
             gh release create "$TAG" \
               --repo "$GITHUB_REPOSITORY" \
-              --title "VKD3D-Proton ${VERSION_NAME} (${TAG})" \
+              --title "VKD3D-Proton ${VER} (${TAG})" \
               --generate-notes \
               --latest \
               "$ARCHIVE"
