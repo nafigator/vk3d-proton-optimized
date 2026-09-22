@@ -169,7 +169,6 @@ jobs:
           meson setup build.32-clang --cross-file=build-win32-clang.txt $MESON_COMMON_ARGS
           ninja -C build.32-clang
           
-          # Формируем структуру релиза
           VERSION_NAME="${TAG#v}"
           mkdir -p "vkd3d-proton-${VERSION_NAME}/x64" "vkd3d-proton-${VERSION_NAME}/x86"
           cp build.64-clang/libs/d3d12/d3d12.dll "vkd3d-proton-${VERSION_NAME}/x64/"
@@ -177,10 +176,8 @@ jobs:
           cp build.32-clang/libs/d3d12/d3d12.dll "vkd3d-proton-${VERSION_NAME}/x86/"
           cp build.32-clang/libs/d3d12core/d3d12core.dll "vkd3d-proton-${VERSION_NAME}/x86/"
           
-          # Копируем скрипт установки
           cp setup_vkd3d_proton.sh "vkd3d-proton-${VERSION_NAME}/"
           
-          # Архивация
           tar -caf "vkd3d-proton-${VERSION_NAME}.tar.zst" "vkd3d-proton-${VERSION_NAME}"
           echo "Archive created:"
           ls -lh "vkd3d-proton-${VERSION_NAME}.tar.zst"
