@@ -20,7 +20,6 @@ defaults:
 
 env:
   VKD3D_VERSION: '3.0.1'
-  OPT_FLAGS_LIST: "'-march=x86-64-v4', '-mtune=znver4', '-O3', '-fomit-frame-pointer', '-falign-functions=32', '-falign-loops=32'"
   MESON_COMMON_ARGS: '--buildtype release -Db_lundef=false'
 
 jobs:
@@ -34,6 +33,9 @@ jobs:
       ver: ${{ steps.build.outputs.ver }}
       archive_name: ${{ steps.pack.outputs.archive_name }}
     steps:
+      - name: Checkout workflow repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 #v7.0.1
+
       - name: Determine release tag
         id: tag
         run: |
@@ -56,38 +58,11 @@ jobs:
             clang llvm lld mingw-w64-gcc mingw-w64-crt mingw-w64-headers \
             glslang python wine
 
-      - name: Create compiler wrappers
+      - name: Install compiler wrappers
         run: |
-          CLANG_REAL=$(which clang)
-          CLANGXX_REAL=$(which clang++)
-
-          cat > /usr/local/bin/clang-filtered << EOF
-          #!/bin/bash
-          args=()
-          for arg in "\$@"; do
-              case "\$arg" in
-                  -Wl,--allow-shlib-undefined|--allow-shlib-undefined) ;;
-                  *) args+=("\$arg") ;;
-              esac
-          done
-          exec "${CLANG_REAL}" "\${args[@]}"
-          EOF
-          chmod +x /usr/local/bin/clang-filtered
-
-          cat > /usr/local/bin/clang++-filtered << EOF
-          #!/bin/bash
-          args=()
-          for arg in "\$@"; do
-              case "\$arg" in
-                  -Wl,--allow-shlib-undefined|--allow-shlib-undefined) ;;
-                  *) args+=("\$arg") ;;
-              esac
-          done
-          exec "${CLANGXX_REAL}" "\${args[@]}"
-          EOF
-          chmod +x /usr/local/bin/clang++-filtered
-
-          which clang-filtered clang++-filtered
+          install -m 755 .github/helpers/clang-filtered.sh /usr/local/bin/clang-filtered
+          install -m 755 .github/helpers/clang++-filtered.sh /usr/local/bin/clang++-filtered
+          ls -l /usr/local/bin/clang*-filtered
 
       - name: Clone VKD3D-Proton source
         run: |
@@ -99,66 +74,11 @@ jobs:
           cd vkd3d-proton
           git submodule update --init --recursive
 
-      - name: Create Clang cross-files
-        working-directory: vkd3d-proton
+      - name: Copy Clang cross-files
         run: |
-          TARGET64="x86_64-w64-windows-gnu"
-          TARGET32="i686-w64-windows-gnu"
-          
-          cat > build-win64-clang.txt <<EOF
-          [binaries]
-          c = 'clang-filtered'
-          cpp = 'clang++-filtered'
-          ar = 'llvm-ar'
-          strip = 'llvm-strip'
-          windres = 'llvm-windres'
-          c_ld = 'lld'
-          cpp_ld = 'lld'
-
-          [properties]
-          needs_exe_wrapper = true
-
-          [host_machine]
-          system = 'windows'
-          cpu_family = 'x86_64'
-          cpu = 'x86_64'
-          endian = 'little'
-
-          [built-in options]
-          c_args = ['--target=${TARGET64}', ${OPT_FLAGS_LIST}]
-          cpp_args = ['--target=${TARGET64}', ${OPT_FLAGS_LIST}]
-          c_link_args = ['--target=${TARGET64}', '-fuse-ld=lld']
-          cpp_link_args = ['--target=${TARGET64}', '-fuse-ld=lld']
-          EOF
-
-          cat > build-win32-clang.txt <<EOF
-          [binaries]
-          c = 'clang-filtered'
-          cpp = 'clang++-filtered'
-          ar = 'llvm-ar'
-          strip = 'llvm-strip'
-          windres = 'llvm-windres'
-          c_ld = 'lld'
-          cpp_ld = 'lld'
-
-          [properties]
-          needs_exe_wrapper = true
-
-          [host_machine]
-          system = 'windows'
-          cpu_family = 'x86'
-          cpu = 'i686'
-          endian = 'little'
-
-          [built-in options]
-          c_args = ['--target=${TARGET32}', ${OPT_FLAGS_LIST}]
-          cpp_args = ['--target=${TARGET32}', ${OPT_FLAGS_LIST}]
-          c_link_args = ['--target=${TARGET32}', '-fuse-ld=lld']
-          cpp_link_args = ['--target=${TARGET32}', '-fuse-ld=lld']
-          EOF
-          
-          echo "--- build-win64-clang.txt ---"
-          cat build-win64-clang.txt
+          cp .github/helpers/build-win64-clang.txt vkd3d-proton/
+          cp .github/helpers/build-win32-clang.txt vkd3d-proton/
+          ls -l vkd3d-proton/build-win*-clang.txt
 
       - name: Build VKD3D-Proton
         working-directory: vkd3d-proton
