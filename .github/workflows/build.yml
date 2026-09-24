@@ -121,7 +121,7 @@ jobs:
           ls -lh "../${ARCHIVE_NAME}"
 
       - name: Upload archive as artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: vkd3d-proton-archive
           path: ${{ steps.pack.outputs.archive_name }}
@@ -154,8 +154,7 @@ jobs:
             echo "Creating release $TAG"
             gh release create "$TAG" \
               --repo "$GITHUB_REPOSITORY" \
-              --title "VKD3D-Proton ${VER} (${TAG})" \
-              --generate-notes \
+              --title "VKD3D-Proton ${VER} (x86-64-v4) (${TAG})" \
               --latest \
               "$ARCHIVE"
           fi

@@ -4,9 +4,10 @@ Custom builds of [VKD3D-Proton](https://github.com/HansKristian-Work/vkd3d-proto
 
 ## Requirements
 
-- CPU with **AVX-512** support (AMD Zen 4 or newer)
+- **Architecture:** amd64
+- **CPU:** with **AVX-512** support (x86-64-v4)
+   - AMD Zen 4 (Ryzen 7000/8000/9000)
 - Wine 8.0+ or Proton 8.0+
-- x86_64 Linux
 
 Packages will crash with `Illegal instruction` on CPUs without AVX-512.
 
@@ -51,6 +52,13 @@ rm -f /path/to/game/vkd3d-proton.cache \
 ```
 
 First launch after clearing the cache will be slower — shaders are recompiled and a fresh cache is created.
+
+## Build Architecture
+
+### x86_64
+
+- Compiler: `Clang 22`
+- Build flags: `-march=x86-64-v4, -mtune=znver4, -O3, -fomit-frame-pointer, -falign-functions=32, -falign-loops=32`
 
 ## Notes
 
